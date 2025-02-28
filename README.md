@@ -30,6 +30,13 @@ npm i
     - Optimize imports
     - Rearrange code
 
+# Before running
+
+```bash
+# in root folder create .env
+# copy contents of .example.env
+```
+
 # Running
 
 ```bash
