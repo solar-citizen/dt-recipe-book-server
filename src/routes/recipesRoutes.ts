@@ -3,7 +3,7 @@ import { RecipesController } from '@/src/controllers'
 
 const recipeRoutes = Router()
 
-recipeRoutes.get('/recipes', RecipesController.getRecipes)
-recipeRoutes.get('/recipes/:id', RecipesController.getRecipeById)
+recipeRoutes.get('/api/recipes', RecipesController.getRecipes)
+recipeRoutes.get('/api/recipes/:id', RecipesController.getRecipeById)
 
 export { recipeRoutes }
