@@ -1,8 +1,18 @@
 # Installation
 
-```bash
-cd server
+If you didn't create main folder:
 
+```bash
+mkdir dt-recipe-book
+cd dt-recipe-book
+```
+
+Else:
+
+```bash
+cd dt-recipe-book
+git clone https://github.com/solar-citizen/dt-recipe-book-server.git
+cd dt-recipe-book-server
 npm i
 ```
 
