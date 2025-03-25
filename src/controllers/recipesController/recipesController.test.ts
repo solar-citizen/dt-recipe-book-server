@@ -1,19 +1,24 @@
-import { NextFunction, Request, Response } from 'express'
 import axios from 'axios'
-import { RecipesController } from '@/src/controllers'
 import { config } from 'dotenv'
+import { NextFunction, Request, Response } from 'express'
+
+import { RecipesController } from '@/src/controllers'
 
 config({ path: './.env.test' })
 
-jest.mock('axios')
-const mockedAxios = axios as jest.Mocked<typeof axios>
+jest.mock('axios', () => ({
+  get: jest.fn(),
+}))
+
+// eslint-disable-next-line @typescript-eslint/unbound-method
+const { get } = axios as jest.Mocked<typeof axios>
 
 describe('RecipesController', () => {
   let req: Partial<Request>
   let res: Partial<Response>
-  let next: jest.Mock<NextFunction>
+  let next: jest.MockedFunction<NextFunction>
 
-  const originalBaseUrl = process.env.BASE_URL
+  const originalBaseUrl = process.env.BASE_URL ?? ''
 
   beforeEach(() => {
     req = {
@@ -23,7 +28,7 @@ describe('RecipesController', () => {
     res = {
       json: jest.fn(),
     }
-    next = jest.fn()
+    next = jest.fn() as jest.MockedFunction<NextFunction>
 
     jest.clearAllMocks()
   })
@@ -36,53 +41,53 @@ describe('RecipesController', () => {
     const mockRecipeData = { meals: [{ idMeal: '1', strMeal: 'Test Recipe' }] }
 
     it('should get all recipes when no filter is provided', async () => {
-      mockedAxios.get.mockResolvedValueOnce({ data: mockRecipeData })
+      get.mockResolvedValueOnce({ data: mockRecipeData })
 
-      await RecipesController.getRecipes(req as Request, res as Response, next)
+      await RecipesController.getRecipes(req as Request, res as Response, next as NextFunction)
 
-      expect(mockedAxios.get).toHaveBeenCalledWith(`${originalBaseUrl}/search.php?s=`)
+      expect(get).toHaveBeenCalledWith(`${originalBaseUrl}/search.php?s=`)
       expect(res.json).toHaveBeenCalledWith(mockRecipeData)
       expect(next).not.toHaveBeenCalled()
     })
 
     it('should filter recipes by ingredient', async () => {
       req.query = { ingredient: 'chicken_breast' }
-      mockedAxios.get.mockResolvedValueOnce({ data: mockRecipeData })
+      get.mockResolvedValueOnce({ data: mockRecipeData })
 
-      await RecipesController.getRecipes(req as Request, res as Response, next)
+      await RecipesController.getRecipes(req as Request, res as Response, next as NextFunction)
 
-      expect(mockedAxios.get).toHaveBeenCalledWith(`${originalBaseUrl}/filter.php?i=chicken_breast`)
+      expect(get).toHaveBeenCalledWith(`${originalBaseUrl}/filter.php?i=chicken_breast`)
       expect(res.json).toHaveBeenCalledWith(mockRecipeData)
       expect(next).not.toHaveBeenCalled()
     })
 
     it('should filter recipes by country', async () => {
       req.query = { country: 'Canadian' }
-      mockedAxios.get.mockResolvedValueOnce({ data: mockRecipeData })
+      get.mockResolvedValueOnce({ data: mockRecipeData })
 
-      await RecipesController.getRecipes(req as Request, res as Response, next)
+      await RecipesController.getRecipes(req as Request, res as Response, next as NextFunction)
 
-      expect(mockedAxios.get).toHaveBeenCalledWith(`${originalBaseUrl}/filter.php?a=Canadian`)
+      expect(get).toHaveBeenCalledWith(`${originalBaseUrl}/filter.php?a=Canadian`)
       expect(res.json).toHaveBeenCalledWith(mockRecipeData)
       expect(next).not.toHaveBeenCalled()
     })
 
     it('should filter recipes by category', async () => {
       req.query = { category: 'Seafood' }
-      mockedAxios.get.mockResolvedValueOnce({ data: mockRecipeData })
+      get.mockResolvedValueOnce({ data: mockRecipeData })
 
-      await RecipesController.getRecipes(req as Request, res as Response, next)
+      await RecipesController.getRecipes(req as Request, res as Response, next as NextFunction)
 
-      expect(mockedAxios.get).toHaveBeenCalledWith(`${originalBaseUrl}/filter.php?c=Seafood`)
+      expect(get).toHaveBeenCalledWith(`${originalBaseUrl}/filter.php?c=Seafood`)
       expect(res.json).toHaveBeenCalledWith(mockRecipeData)
       expect(next).not.toHaveBeenCalled()
     })
 
     it('should handle API errors', async () => {
       const mockError = new Error('API Error')
-      mockedAxios.get.mockRejectedValueOnce(mockError)
+      get.mockRejectedValueOnce(mockError)
 
-      await RecipesController.getRecipes(req as Request, res as Response, next)
+      await RecipesController.getRecipes(req as Request, res as Response, next as NextFunction)
 
       expect(next).toHaveBeenCalledWith(mockError)
     })
@@ -102,11 +107,11 @@ describe('RecipesController', () => {
 
     it('should get recipe details by id', async () => {
       req.params = { id: '52772' }
-      mockedAxios.get.mockResolvedValueOnce({ data: mockRecipeDetailData })
+      get.mockResolvedValueOnce({ data: mockRecipeDetailData })
 
-      await RecipesController.getRecipeById(req as Request, res as Response, next)
+      await RecipesController.getRecipeById(req as Request, res as Response, next as NextFunction)
 
-      expect(mockedAxios.get).toHaveBeenCalledWith(`${originalBaseUrl}/lookup.php?i=52772`)
+      expect(get).toHaveBeenCalledWith(`${originalBaseUrl}/lookup.php?i=52772`)
       expect(res.json).toHaveBeenCalledWith(mockRecipeDetailData)
       expect(next).not.toHaveBeenCalled()
     })
@@ -114,9 +119,9 @@ describe('RecipesController', () => {
     it('should handle API errors when getting recipe details', async () => {
       req.params = { id: 'invalid-id' }
       const mockError = new Error('API Error')
-      mockedAxios.get.mockRejectedValueOnce(mockError)
+      get.mockRejectedValueOnce(mockError)
 
-      await RecipesController.getRecipeById(req as Request, res as Response, next)
+      await RecipesController.getRecipeById(req as Request, res as Response, next as NextFunction)
 
       expect(next).toHaveBeenCalledWith(mockError)
     })

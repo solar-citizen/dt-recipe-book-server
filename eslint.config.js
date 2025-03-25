@@ -1,74 +1,101 @@
 import js from '@eslint/js'
+import ts from '@typescript-eslint/parser'
 import globals from 'globals'
+import tsEslint from 'typescript-eslint'
 import prettier from 'eslint-config-prettier'
-import nodePkg from 'eslint-plugin-node'
-import importPlugin from 'eslint-plugin-import'
-import tsEsLint from '@typescript-eslint/eslint-plugin'
-import tsEslintParser from '@typescript-eslint/parser'
+import esLintImport from 'eslint-plugin-import'
+import simpleImportSort from 'eslint-plugin-simple-import-sort'
+import jestPlugin from 'eslint-plugin-jest'
 
-export default [
-  js.configs.recommended,
-  {
-    files: ['**/*.js'],
-    languageOptions: {
-      globals: {
-        ...globals.node,
-      },
-      ecmaVersion: 2024,
+const customRules = {
+  /* eslint */
+  'max-len': ['warn', { code: 120 }],
+  /* eslint-plugin-simple-import-sort */
+  'simple-import-sort/imports': 'error',
+  'simple-import-sort/exports': 'error',
+  /* eslint-plugin-import */
+  'import/first': 'error',
+  'import/newline-after-import': 'error',
+  'import/no-duplicates': 'error',
+  /* no-unused-vars */
+  '@typescript-eslint/no-unused-vars': 'error',
+  'no-unused-vars': 'off',
+}
+
+const baseConfig = {
+  ignores: ['dist'],
+  linterOptions: {
+    reportUnusedDisableDirectives: true,
+  },
+}
+
+const tsConfig = {
+  files: ['**/*.{ts,tsx}'],
+  languageOptions: {
+    parser: ts,
+    ecmaVersion: 2020,
+    globals: {
+      ...globals.browser,
+      ...globals.node,
+    },
+    parserOptions: {
+      project: './tsconfig.json',
+      tsconfigRootDir: import.meta.dirname,
       sourceType: 'module',
     },
-    plugins: {
-      node: nodePkg,
-      import: importPlugin,
+  },
+  settings: {
+    react: {
+      version: 'detect',
     },
-    rules: {
-      // node.js rules
-      'node/no-unsupported-features/es-syntax': [
-        'error',
-        {
-          version: '>=14.0.0',
-          ignores: [],
+  },
+  plugins: {
+    'simple-import-sort': simpleImportSort,
+    import: esLintImport,
+  },
+  rules: {
+    ...js.configs.recommended.rules,
+    ...prettier.rules,
+    ...customRules,
+    '@typescript-eslint/no-misused-promises': [
+      2,
+      {
+        checksVoidReturn: {
+          attributes: false,
         },
-      ],
-      'node/no-missing-import': 'error',
-      'node/no-extraneous-import': 'error',
+      },
+    ],
+  },
+}
 
-      // import plugin rules
-      'import/no-unresolved': 'error',
-      'import/named': 'error',
-      'import/default': 'error',
-      'import/namespace': 'error',
-      'import/order': [
-        'error',
-        {
-          'newlines-between': 'always',
-          alphabetize: {
-            order: 'asc',
-          },
-        },
-      ],
-      // js rules
-      'no-console': 'warn',
-      'no-unused-vars': 'warn',
+const jestConfig = /** @type {import('eslint').Linter.FlatConfig} */ {
+  files: ['**/*.test.{js,ts}', '**/*.spec.{js,ts}'],
+  plugins: {
+    jest: jestPlugin,
+  },
+  languageOptions: {
+    globals: {
+      ...globals.jest,
     },
   },
-  // ts override
-  {
-    files: ['**/*.ts', '**/*.tsx'],
-    languageOptions: {
-      parser: tsEslintParser,
-    },
-    plugins: {
-      '@typescript-eslint': tsEsLint,
-      node: nodePkg,
-      import: importPlugin,
-    },
-    extends: ['plugin:@typescript-eslint/recommended', 'prettier'],
-    rules: {
-      '@typescript-eslint/no-explicit-any': 'warn',
-      '@typescript-eslint/explicit-function-return-type': 'warn',
-      '@typescript-eslint/strict-boolean-expressions': 'error',
-    },
+  rules: {
+    ...jestPlugin.configs.recommended.rules,
+    'jest/no-disabled-tests': 'warn',
+    'jest/no-focused-tests': 'error',
+    'jest/no-identical-title': 'error',
+    'jest/prefer-to-have-length': 'warn',
+    'jest/valid-expect': 'error',
   },
-  prettier,
-]
+}
+
+const tsTypeCheckedConfig = tsEslint.configs.strictTypeChecked.map(config => {
+  if (config.rules) {
+    return {
+      ...config,
+      files: ['**/*.{ts,tsx}'],
+    }
+  }
+  return config
+})
+
+export default [baseConfig, js.configs.recommended, ...tsTypeCheckedConfig, tsConfig, jestConfig]

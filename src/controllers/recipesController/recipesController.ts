@@ -1,27 +1,35 @@
-import { Request, Response } from 'express'
-import asyncHandler from 'express-async-handler'
 import axios from 'axios'
 import { config } from 'dotenv'
+import { Request, Response } from 'express'
+import asyncHandler from 'express-async-handler'
+
+import { isNonEmptyString } from '@/src/lib'
 
 config()
 
-const baseUrl = process.env.BASE_URL || ''
+const baseUrl = process.env.BASE_URL ?? ''
+
+type RecipeFilterKey = 'ingredient' | 'country' | 'category'
+type ValidFilterEntry = { param: RecipeFilterKey; value: string }
+
+const recipeFilters: Record<RecipeFilterKey, string> = {
+  ingredient: '/filter.php?i=',
+  country: '/filter.php?a=',
+  category: '/filter.php?c=',
+}
 
 export const RecipesController = {
   getRecipes: asyncHandler(async (req: Request, res: Response) => {
-    const { ingredient, country, category } = req.query
+    const filterEntry = (Object.keys(recipeFilters) as RecipeFilterKey[])
+      .map(param => ({
+        param,
+        value: req.query[param],
+      }))
+      .find((item): item is ValidFilterEntry => isNonEmptyString(item.value))
 
-    let url = ''
-
-    if (ingredient) {
-      url = `${baseUrl}/filter.php?i=${ingredient}`
-    } else if (country) {
-      url = `${baseUrl}/filter.php?a=${country}`
-    } else if (category) {
-      url = `${baseUrl}/filter.php?c=${category}`
-    } else {
-      url = `${baseUrl}/search.php?s=`
-    }
+    const url = filterEntry
+      ? `${baseUrl}${recipeFilters[filterEntry.param]}${encodeURIComponent(filterEntry.value)}`
+      : `${baseUrl}/search.php?s=`
 
     const response = await axios.get(url)
     res.json(response.data)
